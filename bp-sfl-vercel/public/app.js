@@ -1,0 +1,9 @@
+const $=s=>document.querySelector(s), url=$('#url'),key=$('#key'),out=$('#output'),original=$('#original'),status=$('#status'),history=$('#history'),toast=$('#toast');
+function notify(x){toast.textContent=x;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),1800)}
+function render(){const h=JSON.parse(localStorage.getItem('bp_history')||'[]');history.innerHTML=h.length?h.map(x=>`<div class="history-item">${x}</div>`).join(''):'<div class="empty">Belum ada riwayat bypass.</div>'}
+$('#paste').onclick=async()=>{try{url.value=await navigator.clipboard.readText();notify('URL ditempel')}catch{notify('Clipboard tidak tersedia')}};
+$('#bypass').onclick=async()=>{if(!url.value.trim())return notify('Masukkan URL terlebih dahulu');const b=$('#bypass');b.disabled=true;status.textContent='Memproses...';original.textContent=url.value.trim();out.textContent='-';try{const r=await fetch('/api/bypass',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:url.value.trim(),apiKey:key.value.trim()})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Request gagal');out.textContent=d.result||'-';status.textContent='Berhasil';const h=JSON.parse(localStorage.getItem('bp_history')||'[]');h.unshift(d.result);localStorage.setItem('bp_history',JSON.stringify(h.slice(0,10)));render()}catch(e){status.textContent='Gagal';out.textContent=e.message;notify(e.message)}finally{b.disabled=false}};
+$('#copy').onclick=()=>{if(out.textContent&&out.textContent!=='-'){navigator.clipboard?.writeText(out.textContent);notify('Link berhasil dicopy')}};
+$('#open').onclick=()=>{if(/^https?:\/\//i.test(out.textContent))window.open(out.textContent,'_blank','noopener,noreferrer')};
+$('#reset').onclick=()=>{url.value='';key.value='';original.textContent='-';out.textContent='-';status.textContent='Belum ada proses'};
+$('#clear').onclick=()=>{localStorage.removeItem('bp_history');render()};render();
